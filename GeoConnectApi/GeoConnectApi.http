@@ -1,0 +1,6 @@
+@GeoConnectApi_HostAddress = http://localhost:5127
+
+GET {{GeoConnectApi_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
