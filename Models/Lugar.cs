@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Text.Json.Serialization;
 using NetTopologySuite.Geometries;
 
 namespace Models
@@ -21,10 +22,7 @@ namespace Models
 
         public DateTime? FechaRegistro { get; set; }
 
-        public virtual ICollection<Comentario> Comentarios { get; set; } = new List<Comentario>();
-
-        public virtual Municipio? IdMunicipioNavigation { get; set; }
-
-        public virtual ICollection<AccionLugar> LugaresAcciones { get; set; } = new List<AccionLugar>();
+        [JsonIgnore]
+        public Municipio? Municipio { get; set; }
     }
 }

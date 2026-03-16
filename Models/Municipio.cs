@@ -11,7 +11,5 @@ namespace Models
         public string NombreMunicipio { get; set; } = null!;
 
         public string? Departamento { get; set; }
-
-        public virtual ICollection<Lugar> Lugares { get; set; } = new List<Lugar>();
     }
 }

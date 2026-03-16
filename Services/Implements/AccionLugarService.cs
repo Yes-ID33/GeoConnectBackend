@@ -27,7 +27,7 @@ namespace Services.Implements
 
             // Ordenamiento dinámico
             if (ordenarPorLugar)
-                query = query.OrderBy(a => a.GooglePlace!.NombreLugar);
+                query = query.OrderBy(a => a.Lugar!.NombreLugar);
             else
                 query = query.OrderByDescending(a => a.FechaAccion);
 
@@ -35,7 +35,7 @@ namespace Services.Implements
                 a.IdAccion,
                 a.TipoAccion,
                 a.FechaAccion,
-                Lugar = a.GooglePlace!.NombreLugar,
+                Lugar = a.Lugar!.NombreLugar,
                 IdLugar = a.GooglePlaceId
             }).ToListAsync();
 

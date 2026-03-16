@@ -22,9 +22,5 @@ namespace Models
         public DateTime? TokenExpira { get; set; }
 
         public DateTime? FechaCreacion { get; set; }
-
-        public virtual ICollection<Comentario> Comentarios { get; set; } = new List<Comentario>();
-
-        public virtual ICollection<AccionLugar> LugaresAcciones { get; set; } = new List<AccionLugar>();
     }
 }

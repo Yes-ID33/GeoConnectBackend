@@ -17,9 +17,9 @@ namespace Services.Implements
         {
             var query = _context.Municipios.Select(m => new {
                 m.NombreMunicipio,
-                TotalLugares = m.Lugares.Count,
+                TotalLugares = _context.Lugares.Count(l=>l.IdMunicipio == m.IdMunicipio),
                 // Sumamos todos los comentarios de todos los lugares de este municipio
-                TotalComentarios = m.Lugares.Sum(l => l.Comentarios.Count)
+                TotalComentarios = _context.Comentarios.Count(c => c.Lugar != null && c.Lugar.IdMunicipio == m.IdMunicipio)
             });
 
             // Lógica de ordenamiento

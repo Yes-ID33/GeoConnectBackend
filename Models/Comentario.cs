@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 
 namespace Models
@@ -15,11 +16,14 @@ namespace Models
         public string? GooglePlaceId { get; set; }
 
         public string Comentario1 { get; set; } = null!;
+        public int Calificacion { get; set; }
 
         public DateTime? FechaPublicacion { get; set; }
 
-        public virtual Lugar? GooglePlace { get; set; }
+        [JsonIgnore]
+        public Lugar? Lugar { get; set; }
 
-        public virtual Usuario? IdUsuarioNavigation { get; set; }
+        [JsonIgnore]
+        public Usuario? Usuario { get; set; }
     }
 }

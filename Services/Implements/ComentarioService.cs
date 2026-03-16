@@ -24,9 +24,9 @@ namespace Services.Implements
                     c.Comentario1,
                     c.FechaPublicacion,
                     // Magia aquí: Si el usuario es nulo o está inactivo, ocultamos su nombre
-                    Autor = c.IdUsuarioNavigation == null || c.IdUsuarioNavigation.Verificado == false
+                    Autor = c.Usuario == null || c.Usuario.Verificado == false
                             ? "Usuario Eliminado" //operador ternario breve
-                            : c.IdUsuarioNavigation.Nombre
+                            : c.Usuario.Nombre
                 }).ToListAsync();
 
             return comentarios;

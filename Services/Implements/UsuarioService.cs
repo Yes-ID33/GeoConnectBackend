@@ -32,7 +32,9 @@ namespace Services.Implements
 
         public async Task<object> CrearUsuario(Usuario newUser)
         {
-            newUser.FechaCreacion = DateTime.Now;
+            var existe = await _context.Usuarios.AnyAsync(u => u.Correo == newUser.Correo);
+            if (existe) return new { Error="El correo ya está registrado."};
+
             // Por defecto, lo marcamos como no verificado hasta que confirme su correo (si aplicas esa lógica después)
             newUser.Verificado = false;
 
@@ -53,7 +55,15 @@ namespace Services.Implements
             var usuarioBd = await _context.Usuarios.FindAsync(id);
             if (usuarioBd == null) return (false, "Usuario no encontrado.");
 
+            if (usuarioBd.Correo != datosNuevos.Correo)
+            {
+                var correoOcupado = await _context.Usuarios.AnyAsync(u => u.Correo == datosNuevos.Correo);
+                if (correoOcupado) return ( false, "El nuevo correo ya está en uso.");
+            }
+
             usuarioBd.Nombre = datosNuevos.Nombre;
+            usuarioBd.Correo = datosNuevos.Correo;
+            usuarioBd.Contrasena = datosNuevos.Contrasena;
             // OJO: Deberías hacer DTOs para esto. Aquí confías en que el frontend no envíe datos basura.
 
             await _context.SaveChangesAsync();
@@ -85,7 +95,11 @@ namespace Services.Implements
             if (usuarioBd.Verificado == true || !usuarioBd.Correo.StartsWith("eliminado_"))
                 return (false, "La cuenta ya se encuentra activa o no fue desactivada correctamente.");
 
-            // 3. Reactivamos
+            // 3. Verificamos que el nuevo correo no esté repetido
+            var correoOcupado = await _context.Usuarios.AnyAsync(u => u.Correo == nuevoCorreo);
+            if (correoOcupado) return (false, "Este correo ya está en uso.");
+
+            // 4. Reactivamos
             usuarioBd.Nombre = nuevoNombre;
             usuarioBd.Correo = nuevoCorreo; // Necesita un correo real nuevamente
             usuarioBd.Verificado = true; // O false si quieres que vuelva a confirmar el correo

@@ -1,8 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
+using Models;
 using Microsoft.EntityFrameworkCore;
 
-namespace Models;
+namespace Services;
 
 public partial class GeoConnectContext : DbContext
 {
@@ -34,6 +35,7 @@ public partial class GeoConnectContext : DbContext
 
             entity.Property(e => e.IdComentario).HasColumnName("idComentario");
             entity.Property(e => e.Comentario1).HasColumnName("comentario");
+            entity.Property(e => e.Calificacion).HasColumnName("calificacion");
             entity.Property(e => e.FechaPublicacion)
                 .HasDefaultValueSql("(getdate())")
                 .HasColumnType("datetime")
@@ -44,11 +46,11 @@ public partial class GeoConnectContext : DbContext
                 .HasColumnName("googlePlaceId");
             entity.Property(e => e.IdUsuario).HasColumnName("idUsuario");
 
-            entity.HasOne(d => d.GooglePlace).WithMany(p => p.Comentarios)
+            entity.HasOne(d => d.Lugar).WithMany()
                 .HasForeignKey(d => d.GooglePlaceId)
                 .HasConstraintName("FK__Comentari__googl__5BE2A6F2");
 
-            entity.HasOne(d => d.IdUsuarioNavigation).WithMany(p => p.Comentarios)
+            entity.HasOne(d => d.Usuario).WithMany()
                 .HasForeignKey(d => d.IdUsuario)
                 .HasConstraintName("FK__Comentari__idUsu__5AEE82B9");
         });
@@ -74,7 +76,7 @@ public partial class GeoConnectContext : DbContext
                 .HasMaxLength(255)
                 .HasColumnName("nombreLugar");
 
-            entity.HasOne(d => d.IdMunicipioNavigation).WithMany(p => p.Lugares)
+            entity.HasOne(d => d.Municipio).WithMany()
                 .HasForeignKey(d => d.IdMunicipio)
                 .HasConstraintName("FK__Lugares__idMunic__5165187F");
         });
@@ -99,11 +101,11 @@ public partial class GeoConnectContext : DbContext
                 .IsUnicode(false)
                 .HasColumnName("tipoAccion");
 
-            entity.HasOne(d => d.GooglePlace).WithMany(p => p.LugaresAcciones)
+            entity.HasOne(d => d.Lugar).WithMany()
                 .HasForeignKey(d => d.GooglePlaceId)
                 .HasConstraintName("FK__LugaresAc__googl__5629CD9C");
 
-            entity.HasOne(d => d.IdUsuarioNavigation).WithMany(p => p.LugaresAcciones)
+            entity.HasOne(d => d.Usuario).WithMany()
                 .HasForeignKey(d => d.IdUsuario)
                 .HasConstraintName("FK__LugaresAc__idUsu__5535A963");
         });

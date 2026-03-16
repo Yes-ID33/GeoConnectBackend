@@ -31,7 +31,7 @@ namespace Services.Implements
                     l.GooglePlaceId,
                     l.NombreLugar,
                     DistanciaMetros = l.Coordenadas.Distance(miUbicacion),
-                    TotalComentarios = l.Comentarios.Count
+                    TotalComentarios = _context.Comentarios.Count(c => c.GooglePlaceId == l.GooglePlaceId )
                 }).ToListAsync();
 
             return lugares;
@@ -39,17 +39,18 @@ namespace Services.Implements
 
         public async Task<IEnumerable<object>> GetLugaresPopulares(bool ascendente = false)
         {
-            var query = _context.Lugares.AsQueryable();
+            var query = _context.Lugares.Select(l => new{
+                l.NombreLugar,
+                //
+                CantidadComentarios = _context.Comentarios.Count(c=>c.GooglePlaceId==l.GooglePlaceId)
+            });
 
             if (ascendente)
-                query = query.OrderBy(l => l.Comentarios.Count);
+                query = query.OrderBy(x => x.CantidadComentarios);
             else
-                query = query.OrderByDescending(l => l.Comentarios.Count); // Más comentados primero
+                query = query.OrderByDescending(x => x.CantidadComentarios); // Más comentados primero
 
-            var lugares = await query.Select(l => new {
-                l.NombreLugar,
-                CantidadComentarios = l.Comentarios.Count
-            }).ToListAsync();
+            var lugares = await query.ToListAsync();
 
             return lugares;
         }
