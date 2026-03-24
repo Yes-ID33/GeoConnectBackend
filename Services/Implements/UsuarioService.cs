@@ -13,61 +13,71 @@ namespace Services.Implements
             _context = context;
         }
 
-        public async Task<IEnumerable<object>> ListarUsuarios()
+        public async Task<IEnumerable<UsuarioResponseDto>> ListarUsuarios()
         {
             var usuarios = await _context.Usuarios
-                .Select(u => new
+                .Select(u => new UsuarioResponseDto
                 {
-                    u.IdUsuario,
-                    u.Nombre,
-                    u.Correo,
-                    u.Verificado,
-                    u.FechaCreacion
-                    // NO incluimos la contraseña aquí. Tampoco devolvemos las listas completas de comentarios/acciones para evitar ciclos infinitos.
+                    IdUsuario = u.IdUsuario,
+                    Nombre = u.Nombre,
+                    Correo = u.Correo,
+                    Verificado = u.Verificado ?? false,
+                    FechaCreacion = u.FechaCreacion ?? DateTime.MinValue
+                    // La contraseña no viaja al frontend, está protegida por el DTO
                 })
                 .ToListAsync();
 
-            return usuarios; // Ya no usamos Ok()
+            return usuarios;
         }
 
-        public async Task<object> CrearUsuario(Usuario newUser)
+        public async Task<(bool Exito, string Mensaje, UsuarioResponseDto? Datos)> CrearUsuario(CrearUsuarioDto dto)
         {
-            var existe = await _context.Usuarios.AnyAsync(u => u.Correo == newUser.Correo);
-            if (existe) return new { Error="El correo ya está registrado."};
+            var existe = await _context.Usuarios.AnyAsync(u => u.Correo == dto.Correo);
+            if (existe)
+                return (false, "El correo ya está registrado.", null);
 
-            // Por defecto, lo marcamos como no verificado hasta que confirme su correo (si aplicas esa lógica después)
-            newUser.Verificado = false;
+            var newUser = new Usuario
+            {
+                Nombre = dto.Nombre,
+                Correo = dto.Correo,
+                Contrasena = dto.Contrasena, // Nota: En un entorno real, aquí deberías hashear la contraseña
+                Verificado = false,
+                FechaCreacion = DateTime.Now
+            };
 
             _context.Usuarios.Add(newUser);
             await _context.SaveChangesAsync();
 
-            // Devolvemos el objeto anónimo directamente
-            return new
+            // Mapeamos a la respuesta segura
+            var respuesta = new UsuarioResponseDto
             {
-                newUser.IdUsuario,
-                newUser.Nombre,
-                newUser.Correo
+                IdUsuario = newUser.IdUsuario,
+                Nombre = newUser.Nombre,
+                Correo = newUser.Correo,
+                Verificado = newUser.Verificado ?? false,
+                FechaCreacion = newUser.FechaCreacion ?? DateTime.Now
             };
+
+            return (true, "Usuario creado exitosamente.", respuesta);
         }
 
-        public async Task<(bool Exito, string Mensaje)> ActualizarUsuario(int id, Usuario datosNuevos)
+        public async Task<(bool Exito, string Mensaje)> ActualizarUsuario(int id, ActualizarUsuarioDto dto)
         {
             var usuarioBd = await _context.Usuarios.FindAsync(id);
             if (usuarioBd == null) return (false, "Usuario no encontrado.");
 
-            if (usuarioBd.Correo != datosNuevos.Correo)
+            if (usuarioBd.Correo != dto.Correo)
             {
-                var correoOcupado = await _context.Usuarios.AnyAsync(u => u.Correo == datosNuevos.Correo);
-                if (correoOcupado) return ( false, "El nuevo correo ya está en uso.");
+                var correoOcupado = await _context.Usuarios.AnyAsync(u => u.Correo == dto.Correo);
+                if (correoOcupado) return (false, "El nuevo correo ya está en uso.");
             }
 
-            usuarioBd.Nombre = datosNuevos.Nombre;
-            usuarioBd.Correo = datosNuevos.Correo;
-            usuarioBd.Contrasena = datosNuevos.Contrasena;
-            // OJO: Deberías hacer DTOs para esto. Aquí confías en que el frontend no envíe datos basura.
+            usuarioBd.Nombre = dto.Nombre;
+            usuarioBd.Correo = dto.Correo;
+            usuarioBd.Contrasena = dto.Contrasena;
 
             await _context.SaveChangesAsync();
-            return (true, "Perfil actualizado");
+            return (true, "Perfil actualizado correctamente.");
         }
 
         public async Task<(bool Exito, string Mensaje)> DesactivarCuenta(int id)
@@ -87,22 +97,18 @@ namespace Services.Implements
         {
             var usuarioBd = await _context.Usuarios.FindAsync(id);
 
-            // 1. Verificamos si existe
             if (usuarioBd == null)
                 return (false, "Usuario no encontrado.");
 
-            // 2. Verificamos si realmente estaba desactivado (usando la lógica de tu Delete)
             if (usuarioBd.Verificado == true || !usuarioBd.Correo.StartsWith("eliminado_"))
                 return (false, "La cuenta ya se encuentra activa o no fue desactivada correctamente.");
 
-            // 3. Verificamos que el nuevo correo no esté repetido
             var correoOcupado = await _context.Usuarios.AnyAsync(u => u.Correo == nuevoCorreo);
             if (correoOcupado) return (false, "Este correo ya está en uso.");
 
-            // 4. Reactivamos
             usuarioBd.Nombre = nuevoNombre;
-            usuarioBd.Correo = nuevoCorreo; // Necesita un correo real nuevamente
-            usuarioBd.Verificado = true; // O false si quieres que vuelva a confirmar el correo
+            usuarioBd.Correo = nuevoCorreo;
+            usuarioBd.Verificado = true;
 
             await _context.SaveChangesAsync();
             return (true, "Cuenta reactivada correctamente. Tus comentarios volverán a tener tu nombre.");

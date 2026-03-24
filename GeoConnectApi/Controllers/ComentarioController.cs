@@ -20,12 +20,12 @@ namespace GeoConnectApi.Controllers
         /// que lo que hace en realidad es poner en false el verificado, se censura el nombre de quien publicó
         /// el comentario, pero el contenido se queda
         /// </summary>
-        /// <param name="googlePlaceId"></param>
+        /// <param name="IdLugar"></param> ID interno de cada lugar en nuestra DB
         /// <returns></returns>
         [HttpGet("por-lugar/{googlePlaceId}")]
-        public async Task<IActionResult> GetComentariosPorLugar(string googlePlaceId)
+        public async Task<IActionResult> GetComentariosPorLugar(int IdLugar)
         {
-            var comentarios = await _comentarioService.GetComentariosPorLugar(googlePlaceId);
+            var comentarios = await _comentarioService.GetComentariosPorLugar(IdLugar);
             return Ok(comentarios);
         }
 
@@ -51,7 +51,7 @@ namespace GeoConnectApi.Controllers
             var resultado = await _comentarioService.CrearComentario(dto);
 
             if (!resultado.Exito)
-                return BadRequest(resultado.Mensaje);
+                return BadRequest(new { Mensaje = resultado.Mensaje });
 
             return StatusCode(StatusCodes.Status201Created, new { Mensaje = resultado.Mensaje, Datos = resultado.Datos });
         }

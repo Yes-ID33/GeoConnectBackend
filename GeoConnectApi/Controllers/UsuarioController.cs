@@ -31,21 +31,29 @@ namespace GeoConnectApi.Controllers
         /// Método para crear usuarios nuevos, ideal para Register.
         /// </summary>
         [HttpPost("CreateUser")]
-        public async Task<IActionResult> CrearUsuario([FromBody] Usuario newUser)
+        public async Task<IActionResult> CrearUsuario([FromBody] CrearUsuarioDto dto)
         {
-            var usuarioCreado = await _usuarioService.CrearUsuario(newUser);
-            return StatusCode(StatusCodes.Status201Created, usuarioCreado);
+            var resultado = await _usuarioService.CrearUsuario(dto);
+
+            // Si hubo un error (ej. correo repetido), mandamos Bad Request
+            if (!resultado.Exito)
+                return BadRequest(new { Mensaje = resultado.Mensaje });
+
+            // Si todo salió bien, devolvemos 201 Created junto con los datos seguros
+            return StatusCode(StatusCodes.Status201Created, new { Mensaje = resultado.Mensaje, Datos = resultado.Datos });
         }
 
         /// <summary>
         /// Actualizar algunos campos del usuario.
         /// </summary>
         [HttpPut("UpdateUser/{id}")]
-        public async Task<IActionResult> ActualizarUsuario(int id, [FromBody] Usuario datosNuevos)
+        public async Task<IActionResult> ActualizarUsuario(int id, [FromBody] ActualizarUsuarioDto dto)
         {
-            var resultado = await _usuarioService.ActualizarUsuario(id, datosNuevos);
+            var resultado = await _usuarioService.ActualizarUsuario(id, dto);
 
-            if (!resultado.Exito) return NotFound(resultado.Mensaje);
+            // Devolvemos 404 si el usuario no existe, o 400 si la regla de negocio falla
+            if (!resultado.Exito)
+                return BadRequest(new { Mensaje = resultado.Mensaje });
 
             return Ok(new { Mensaje = resultado.Mensaje });
         }
@@ -58,7 +66,7 @@ namespace GeoConnectApi.Controllers
         {
             var resultado = await _usuarioService.DesactivarCuenta(id);
 
-            if (!resultado.Exito) return NotFound(resultado.Mensaje);
+            if (!resultado.Exito) return NotFound(new { Mensaje = resultado.Mensaje });
 
             return Ok(new { Mensaje = resultado.Mensaje });
         }
@@ -71,8 +79,7 @@ namespace GeoConnectApi.Controllers
         {
             var resultado = await _usuarioService.ReactivarCuenta(id, nuevoCorreo, nuevoNombre);
 
-            // Si devuelve false, puede ser que no se encontró o que el estado era inválido, devolvemos un BadRequest por seguridad
-            if (!resultado.Exito) return BadRequest(resultado.Mensaje);
+            if (!resultado.Exito) return BadRequest(new { Mensaje = resultado.Mensaje });
 
             return Ok(new { Mensaje = resultado.Mensaje });
         }

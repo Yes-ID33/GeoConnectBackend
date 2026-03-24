@@ -11,12 +11,13 @@ namespace Models
     {
         public int IdComentario { get; set; }
 
-        public int? IdUsuario { get; set; }
+        public int IdUsuario { get; set; }
 
-        public string? GooglePlaceId { get; set; }
+        public int IdLugar { get; set; }
 
         public string Comentario1 { get; set; } = null!;
-        public int Calificacion { get; set; }
+
+        public float Calificacion { get; set; }
 
         public DateTime? FechaPublicacion { get; set; }
 

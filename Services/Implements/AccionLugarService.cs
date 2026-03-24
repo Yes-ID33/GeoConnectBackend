@@ -13,30 +13,31 @@ namespace Services.Implements
             _context = context;
         }
 
-        public async Task<IEnumerable<object>> GetAccionesUsuario(int idUsuario, string? tipoAccion, bool ordenarPorLugar = false)
+        public async Task<IEnumerable<AccionUsuarioResponseDto>> GetAccionesUsuario(int idUsuario, string? tipoAccion, bool ordenarPorLugar = false)
         {
-            var query = _context.LugaresAcciones
+            var query = _context.LugaresAcciones // Cambia a _context.AccionLugar si renombraste el DbSet
                 .Where(a => a.IdUsuario == idUsuario)
                 .AsQueryable();
 
-            // Filtro dinámico: Si envían "Favorito", "Quiero ir", etc., filtramos.
             if (!string.IsNullOrEmpty(tipoAccion))
             {
                 query = query.Where(a => a.TipoAccion == tipoAccion);
             }
 
-            // Ordenamiento dinámico
             if (ordenarPorLugar)
                 query = query.OrderBy(a => a.Lugar!.NombreLugar);
             else
                 query = query.OrderByDescending(a => a.FechaAccion);
 
-            var resultados = await query.Select(a => new {
-                a.IdAccion,
-                a.TipoAccion,
-                a.FechaAccion,
-                Lugar = a.Lugar!.NombreLugar,
-                IdLugar = a.GooglePlaceId
+            // Mapeamos fuertemente a nuestro nuevo DTO de salida
+            var resultados = await query.Select(a => new AccionUsuarioResponseDto
+            {
+                IdAccion = a.IdAccion,
+                TipoAccion = a.TipoAccion,
+                FechaAccion = a.FechaAccion,
+                NombreLugar = a.Lugar!.NombreLugar,
+                IdLugar = a.IdLugar, // Usamos la nueva PK de tu BD
+                GooglePlaceId = a.Lugar.GooglePlaceId
             }).ToListAsync();
 
             return resultados;
@@ -44,38 +45,40 @@ namespace Services.Implements
 
         public async Task<(bool Exito, string Mensaje, object? Datos)> ToggleAccion(AccionLugarDto dto)
         {
-            // 1. Validar que los tipos de acción coincidan exactamente con lo que esperas
-            var accionesValidas = new[] { "Favorito", "Quiero ir", "Ya visité" }; 
+            var accionesValidas = new[] { "Favorito", "Quiero ir", "Ya visité" };
             if (!accionesValidas.Contains(dto.TipoAccion))
             {
-                return (false ,$"Acción no válida. Debe ser una de: {string.Join(", ", accionesValidas)}", null);
+                return (false, $"Acción no válida. Debe ser una de: {string.Join(", ", accionesValidas)}", null);
             }
 
-            // 2. Buscamos si el usuario ya tiene esta acción registrada para este lugar
+            // Validar que el Lugar interno exista antes de intentar agregar una acción
+            var lugarExiste = await _context.Lugares.AnyAsync(l => l.IdLugar == dto.IdLugar);
+            if (!lugarExiste)
+            {
+                return (false, "El lugar especificado no existe en la base de datos.", null);
+            }
+
+            // Buscamos usando la nueva relación de llave foránea (IdLugar)
             var accionExistente = await _context.LugaresAcciones
                 .FirstOrDefaultAsync(a => a.IdUsuario == dto.IdUsuario
-                                       && a.GooglePlaceId == dto.GooglePlaceId
+                                       && a.IdLugar == dto.IdLugar
                                        && a.TipoAccion == dto.TipoAccion);
 
-            // 3. Lógica del Toggle
             if (accionExistente != null)
             {
-                // Si YA EXISTE (Ícono de color) -> Lo eliminamos (Volver a gris)
                 _context.LugaresAcciones.Remove(accionExistente);
                 await _context.SaveChangesAsync();
 
-                // Devolvemos un estado claro para que el Front sepa qué hacer
                 return (true, "Acción removida de la lista.", new { Estado = "Eliminado" });
             }
             else
             {
-                // Si NO EXISTE (Ícono gris) -> Lo creamos (Pintar de color)
-                var nuevaAccion = new AccionLugar 
+                var nuevaAccion = new AccionLugar
                 {
                     IdUsuario = dto.IdUsuario,
-                    GooglePlaceId = dto.GooglePlaceId, //solo funciona con lugares ya existentes, si aparece un lugar desde 
-                    // google maps que no está guardado en la base de datos, va a tirar error
+                    IdLugar = dto.IdLugar, // Asignamos el ID interno
                     TipoAccion = dto.TipoAccion,
+                    // No hace falta poner DateTime.Now si en OnModelCreating pusimos GetDate(), pero no hace daño dejarlo.
                     FechaAccion = DateTime.Now
                 };
 

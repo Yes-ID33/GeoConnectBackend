@@ -15,40 +15,48 @@ namespace Services.Implements
             _context = context;
         }
 
-        public async Task<IEnumerable<object>> GetLugaresCercanos(double lat, double lon, double radioEnMetros)
+        public async Task<IEnumerable<LugarCercanoResponseDto>> GetLugaresCercanos(double lat, double lon, double radioEnMetros)
         {
-            // 4326 es el estándar GPS (WGS84)
             var geometryFactory = NtsGeometryServices.Instance.CreateGeometryFactory(srid: 4326);
-            // IMPORTANTE: En NTS la coordenada es (Longitud, Latitud), en ese orden.
             var miUbicacion = geometryFactory.CreatePoint(new Coordinate(lon, lat));
 
             var lugares = await _context.Lugares
-                // Filtramos los que estén dentro del radio
-                .Where(l => l.Coordenadas.Distance(miUbicacion) <= radioEnMetros)
-                // Ordenamos del más cercano al más lejano
-                .OrderBy(l => l.Coordenadas.Distance(miUbicacion))
-                .Select(l => new {
-                    l.GooglePlaceId,
-                    l.NombreLugar,
-                    DistanciaMetros = l.Coordenadas.Distance(miUbicacion),
-                    TotalComentarios = _context.Comentarios.Count(c => c.GooglePlaceId == l.GooglePlaceId )
+                // ¡CORRECCIÓN! Primero verificamos que las coordenadas NO sean nulas
+                .Where(l => l.Coordenadas != null && l.Coordenadas.Distance(miUbicacion) <= radioEnMetros)
+                .OrderBy(l => l.Coordenadas!.Distance(miUbicacion))
+                .Select(l => new LugarCercanoResponseDto
+                {
+                    IdLugar = l.IdLugar,
+                    GooglePlaceId = l.GooglePlaceId,
+                    NombreLugar = l.NombreLugar,
+                    DistanciaMetros = l.Coordenadas!.Distance(miUbicacion),
+                    TotalComentarios = _context.Comentarios.Count(c => c.IdLugar == l.IdLugar)
                 }).ToListAsync();
 
             return lugares;
         }
 
-        public async Task<IEnumerable<object>> GetLugaresPopulares(bool ascendente = false)
+        public async Task<IEnumerable<LugarPopularResponseDto>> GetLugaresPopulares(bool ascendente = false)
         {
-            var query = _context.Lugares.Select(l => new{
-                l.NombreLugar,
-                //
-                CantidadComentarios = _context.Comentarios.Count(c=>c.GooglePlaceId==l.GooglePlaceId)
+            var query = _context.Lugares.Select(l => new LugarPopularResponseDto
+            {
+                IdLugar = l.IdLugar,
+                GooglePlaceId = l.GooglePlaceId,
+                NombreLugar = l.NombreLugar,
+                CantidadComentarios = _context.Comentarios.Count(c => c.IdLugar == l.IdLugar),
+
+                // ¡LA MAGIA AQUÍ! Calculamos el promedio al vuelo. 
+                // Usamos un casteo a double? para que no explote si un lugar tiene 0 comentarios.
+                CalificacionPromedio = _context.Comentarios
+                                        .Where(c => c.IdLugar == l.IdLugar)
+                                        .Average(c => (double?)c.Calificacion) ?? 0.0
             });
 
+            // Opcional: Podrías ordenar por Calificación en lugar de Cantidad de Comentarios
             if (ascendente)
                 query = query.OrderBy(x => x.CantidadComentarios);
             else
-                query = query.OrderByDescending(x => x.CantidadComentarios); // Más comentados primero
+                query = query.OrderByDescending(x => x.CantidadComentarios);
 
             var lugares = await query.ToListAsync();
 

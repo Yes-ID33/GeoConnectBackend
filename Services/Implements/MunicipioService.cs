@@ -13,10 +13,10 @@ namespace Services.Implements
             _context = context;
         }
 
-        public async Task<IEnumerable<object>> GetEstadisticasMunicipios(bool porComentarios = true, bool ascendente = false)
+        public async Task<IEnumerable<EstadisticaMunicipioResponseDto>> GetEstadisticasMunicipios(bool porComentarios = true, bool ascendente = false)
         {
-            var query = _context.Municipios.Select(m => new {
-                m.NombreMunicipio,
+            var query = _context.Municipios.Select(m => new EstadisticaMunicipioResponseDto{
+                NombreMunicipio = m.NombreMunicipio,
                 TotalLugares = _context.Lugares.Count(l=>l.IdMunicipio == m.IdMunicipio),
                 // Sumamos todos los comentarios de todos los lugares de este municipio
                 TotalComentarios = _context.Comentarios.Count(c => c.Lugar != null && c.Lugar.IdMunicipio == m.IdMunicipio)
@@ -28,7 +28,7 @@ namespace Services.Implements
             else
                 query = ascendente ? query.OrderBy(m => m.TotalLugares) : query.OrderByDescending(m => m.TotalLugares);
 
-            return await query.Select(x => (object)x).ToListAsync();
+            return await query.ToListAsync();
         }
     }
 }

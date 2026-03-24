@@ -11,9 +11,9 @@ namespace Models
     {
         public int IdAccion { get; set; }
 
-        public int? IdUsuario { get; set; }
+        public int IdUsuario { get; set; }
 
-        public string? GooglePlaceId { get; set; }
+        public int IdLugar { get; set; }
 
         public string TipoAccion { get; set; } = null!;
 

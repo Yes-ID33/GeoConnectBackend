@@ -8,7 +8,9 @@ namespace Models
 {
     public class Lugar
     {
-        public string GooglePlaceId { get; set; } = null!;
+        public int IdLugar { get; set; }
+
+        public string? GooglePlaceId { get; set; }
 
         public int? IdMunicipio { get; set; }
 
@@ -16,7 +18,7 @@ namespace Models
 
         public string? Direccion { get; set; }
 
-        public Geometry Coordenadas { get; set; } = null!;
+        public Geometry? Coordenadas { get; set; }
 
         public string? FotoUrl { get; set; }
 

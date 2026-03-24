@@ -9,6 +9,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Models", "Models\Models.csp
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Services", "Services\Services.csproj", "{97207750-6972-232F-BB7B-6106666106AF}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AutofillGooglePlacesID", "AutofillGooglePlacesID\AutofillGooglePlacesID.csproj", "{FCDD108C-8BE6-40E9-B9E2-DAA3B51EE5F4}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -27,6 +29,10 @@ Global
 		{97207750-6972-232F-BB7B-6106666106AF}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{97207750-6972-232F-BB7B-6106666106AF}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{97207750-6972-232F-BB7B-6106666106AF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FCDD108C-8BE6-40E9-B9E2-DAA3B51EE5F4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FCDD108C-8BE6-40E9-B9E2-DAA3B51EE5F4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FCDD108C-8BE6-40E9-B9E2-DAA3B51EE5F4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FCDD108C-8BE6-40E9-B9E2-DAA3B51EE5F4}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
