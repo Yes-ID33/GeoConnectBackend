@@ -38,31 +38,28 @@ namespace Services.Migrations
                         .HasColumnName("fechaAccion")
                         .HasDefaultValueSql("(getdate())");
 
-                    b.Property<string>("GooglePlaceId")
-                        .HasMaxLength(255)
-                        .IsUnicode(false)
-                        .HasColumnType("varchar(255)")
-                        .HasColumnName("googlePlaceId");
+                    b.Property<int>("IdLugar")
+                        .HasColumnType("int")
+                        .HasColumnName("idLugar");
 
-                    b.Property<int?>("IdUsuario")
+                    b.Property<int>("IdUsuario")
                         .HasColumnType("int")
                         .HasColumnName("idUsuario");
 
                     b.Property<string>("TipoAccion")
                         .IsRequired()
-                        .HasMaxLength(20)
+                        .HasMaxLength(255)
                         .IsUnicode(false)
-                        .HasColumnType("varchar(20)")
+                        .HasColumnType("varchar(255)")
                         .HasColumnName("tipoAccion");
 
-                    b.HasKey("IdAccion")
-                        .HasName("PK__LugaresA__E0B207A4DF513223");
+                    b.HasKey("IdAccion");
 
-                    b.HasIndex("GooglePlaceId");
+                    b.HasIndex("IdLugar");
 
                     b.HasIndex("IdUsuario");
 
-                    b.ToTable("LugaresAcciones", (string)null);
+                    b.ToTable("AccionLugar", (string)null);
                 });
 
             modelBuilder.Entity("Models.Comentario", b =>
@@ -74,8 +71,8 @@ namespace Services.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("IdComentario"));
 
-                    b.Property<int>("Calificacion")
-                        .HasColumnType("int")
+                    b.Property<float>("Calificacion")
+                        .HasColumnType("real")
                         .HasColumnName("calificacion");
 
                     b.Property<string>("Comentario1")
@@ -89,36 +86,36 @@ namespace Services.Migrations
                         .HasColumnName("fechaPublicacion")
                         .HasDefaultValueSql("(getdate())");
 
-                    b.Property<string>("GooglePlaceId")
-                        .HasMaxLength(255)
-                        .IsUnicode(false)
-                        .HasColumnType("varchar(255)")
-                        .HasColumnName("googlePlaceId");
+                    b.Property<int>("IdLugar")
+                        .HasColumnType("int")
+                        .HasColumnName("idLugar");
 
-                    b.Property<int?>("IdUsuario")
+                    b.Property<int>("IdUsuario")
                         .HasColumnType("int")
                         .HasColumnName("idUsuario");
 
-                    b.HasKey("IdComentario")
-                        .HasName("PK__Comentar__C74515DA092105FE");
+                    b.HasKey("IdComentario");
 
-                    b.HasIndex("GooglePlaceId");
+                    b.HasIndex("IdLugar");
 
                     b.HasIndex("IdUsuario");
 
-                    b.ToTable("Comentarios", (string)null);
+                    b.ToTable("Comentarios", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_Comentario_Calificacion", "calificacion >= 1 AND calificacion <= 5");
+                        });
                 });
 
             modelBuilder.Entity("Models.Lugar", b =>
                 {
-                    b.Property<string>("GooglePlaceId")
-                        .HasMaxLength(255)
-                        .IsUnicode(false)
-                        .HasColumnType("varchar(255)")
-                        .HasColumnName("googlePlaceId");
+                    b.Property<int>("IdLugar")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasColumnName("idLugar");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("IdLugar"));
 
                     b.Property<Geometry>("Coordenadas")
-                        .IsRequired()
                         .HasColumnType("geography")
                         .HasColumnName("coordenadas");
 
@@ -136,6 +133,12 @@ namespace Services.Migrations
                         .HasColumnType("nvarchar(max)")
                         .HasColumnName("fotoUrl");
 
+                    b.Property<string>("GooglePlaceId")
+                        .HasMaxLength(255)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(255)")
+                        .HasColumnName("googlePlaceId");
+
                     b.Property<int?>("IdMunicipio")
                         .HasColumnType("int")
                         .HasColumnName("idMunicipio");
@@ -146,8 +149,11 @@ namespace Services.Migrations
                         .HasColumnType("nvarchar(255)")
                         .HasColumnName("nombreLugar");
 
-                    b.HasKey("GooglePlaceId")
-                        .HasName("PK__Lugares__FD6A056AB8A76094");
+                    b.HasKey("IdLugar");
+
+                    b.HasIndex("GooglePlaceId")
+                        .IsUnique()
+                        .HasFilter("[googlePlaceId] IS NOT NULL");
 
                     b.HasIndex("IdMunicipio");
 
@@ -165,21 +171,20 @@ namespace Services.Migrations
 
                     b.Property<string>("Departamento")
                         .ValueGeneratedOnAdd()
-                        .HasMaxLength(100)
+                        .HasMaxLength(255)
                         .IsUnicode(false)
-                        .HasColumnType("varchar(100)")
+                        .HasColumnType("varchar(255)")
                         .HasDefaultValue("Antioquia")
                         .HasColumnName("departamento");
 
                     b.Property<string>("NombreMunicipio")
                         .IsRequired()
-                        .HasMaxLength(100)
+                        .HasMaxLength(255)
                         .IsUnicode(false)
-                        .HasColumnType("varchar(100)")
+                        .HasColumnType("varchar(255)")
                         .HasColumnName("nombreMunicipio");
 
-                    b.HasKey("IdMunicipio")
-                        .HasName("PK__Municipi__FD10E400375E83FA");
+                    b.HasKey("IdMunicipio");
 
                     b.ToTable("Municipios", (string)null);
                 });
@@ -234,11 +239,11 @@ namespace Services.Migrations
                         .HasDefaultValue(false)
                         .HasColumnName("verificado");
 
-                    b.HasKey("IdUsuario")
-                        .HasName("PK__Usuarios__645723A627F384E6");
+                    b.HasKey("IdUsuario");
 
-                    b.HasIndex(new[] { "Correo" }, "UQ__Usuarios__2A586E0B854D0267")
-                        .IsUnique();
+                    b.HasIndex("Correo")
+                        .IsUnique()
+                        .HasDatabaseName("UQ_Usuarios_Correo");
 
                     b.ToTable("Usuarios", (string)null);
                 });
@@ -247,13 +252,17 @@ namespace Services.Migrations
                 {
                     b.HasOne("Models.Lugar", "Lugar")
                         .WithMany()
-                        .HasForeignKey("GooglePlaceId")
-                        .HasConstraintName("FK__LugaresAc__googl__5629CD9C");
+                        .HasForeignKey("IdLugar")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("FK_AccionLugar_Lugares");
 
                     b.HasOne("Models.Usuario", "Usuario")
                         .WithMany()
                         .HasForeignKey("IdUsuario")
-                        .HasConstraintName("FK__LugaresAc__idUsu__5535A963");
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("FK_AccionLugar_Usuarios");
 
                     b.Navigation("Lugar");
 
@@ -264,13 +273,17 @@ namespace Services.Migrations
                 {
                     b.HasOne("Models.Lugar", "Lugar")
                         .WithMany()
-                        .HasForeignKey("GooglePlaceId")
-                        .HasConstraintName("FK__Comentari__googl__5BE2A6F2");
+                        .HasForeignKey("IdLugar")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("FK_Comentarios_Lugares");
 
                     b.HasOne("Models.Usuario", "Usuario")
                         .WithMany()
                         .HasForeignKey("IdUsuario")
-                        .HasConstraintName("FK__Comentari__idUsu__5AEE82B9");
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("FK_Comentarios_Usuarios");
 
                     b.Navigation("Lugar");
 
@@ -282,7 +295,7 @@ namespace Services.Migrations
                     b.HasOne("Models.Municipio", "Municipio")
                         .WithMany()
                         .HasForeignKey("IdMunicipio")
-                        .HasConstraintName("FK__Lugares__idMunic__5165187F");
+                        .HasConstraintName("FK_Lugares_Municipios");
 
                     b.Navigation("Municipio");
                 });

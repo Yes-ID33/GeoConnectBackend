@@ -7,7 +7,7 @@ using NetTopologySuite.Geometries;
 namespace Services.Migrations
 {
     /// <inheritdoc />
-    public partial class GeoDatabase : Migration
+    public partial class DatabaseFinalVersion : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -18,12 +18,12 @@ namespace Services.Migrations
                 {
                     idMunicipio = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
-                    nombreMunicipio = table.Column<string>(type: "varchar(100)", unicode: false, maxLength: 100, nullable: false),
-                    departamento = table.Column<string>(type: "varchar(100)", unicode: false, maxLength: 100, nullable: true, defaultValue: "Antioquia")
+                    nombreMunicipio = table.Column<string>(type: "varchar(255)", unicode: false, maxLength: 255, nullable: false),
+                    departamento = table.Column<string>(type: "varchar(255)", unicode: false, maxLength: 255, nullable: true, defaultValue: "Antioquia")
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK__Municipi__FD10E400375E83FA", x => x.idMunicipio);
+                    table.PrimaryKey("PK_Municipios", x => x.idMunicipio);
                 });
 
             migrationBuilder.CreateTable(
@@ -42,29 +42,59 @@ namespace Services.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK__Usuarios__645723A627F384E6", x => x.idUsuario);
+                    table.PrimaryKey("PK_Usuarios", x => x.idUsuario);
                 });
 
             migrationBuilder.CreateTable(
                 name: "Lugares",
                 columns: table => new
                 {
-                    googlePlaceId = table.Column<string>(type: "varchar(255)", unicode: false, maxLength: 255, nullable: false),
+                    idLugar = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    googlePlaceId = table.Column<string>(type: "varchar(255)", unicode: false, maxLength: 255, nullable: true),
                     idMunicipio = table.Column<int>(type: "int", nullable: true),
                     nombreLugar = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: false),
                     direccion = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    coordenadas = table.Column<Geometry>(type: "geography", nullable: false),
+                    coordenadas = table.Column<Geometry>(type: "geography", nullable: true),
                     fotoUrl = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     fechaRegistro = table.Column<DateTime>(type: "datetime", nullable: true, defaultValueSql: "(getdate())")
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK__Lugares__FD6A056AB8A76094", x => x.googlePlaceId);
+                    table.PrimaryKey("PK_Lugares", x => x.idLugar);
                     table.ForeignKey(
-                        name: "FK__Lugares__idMunic__5165187F",
+                        name: "FK_Lugares_Municipios",
                         column: x => x.idMunicipio,
                         principalTable: "Municipios",
                         principalColumn: "idMunicipio");
+                });
+
+            migrationBuilder.CreateTable(
+                name: "AccionLugar",
+                columns: table => new
+                {
+                    idAccion = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    idUsuario = table.Column<int>(type: "int", nullable: false),
+                    idLugar = table.Column<int>(type: "int", nullable: false),
+                    tipoAccion = table.Column<string>(type: "varchar(255)", unicode: false, maxLength: 255, nullable: false),
+                    fechaAccion = table.Column<DateTime>(type: "datetime", nullable: true, defaultValueSql: "(getdate())")
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_AccionLugar", x => x.idAccion);
+                    table.ForeignKey(
+                        name: "FK_AccionLugar_Lugares",
+                        column: x => x.idLugar,
+                        principalTable: "Lugares",
+                        principalColumn: "idLugar",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_AccionLugar_Usuarios",
+                        column: x => x.idUsuario,
+                        principalTable: "Usuarios",
+                        principalColumn: "idUsuario",
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
@@ -73,57 +103,44 @@ namespace Services.Migrations
                 {
                     idComentario = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
-                    idUsuario = table.Column<int>(type: "int", nullable: true),
-                    googlePlaceId = table.Column<string>(type: "varchar(255)", unicode: false, maxLength: 255, nullable: true),
+                    idUsuario = table.Column<int>(type: "int", nullable: false),
+                    idLugar = table.Column<int>(type: "int", nullable: false),
                     comentario = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    calificacion = table.Column<int>(type: "int", nullable: false),
+                    calificacion = table.Column<float>(type: "real", nullable: false),
                     fechaPublicacion = table.Column<DateTime>(type: "datetime", nullable: true, defaultValueSql: "(getdate())")
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK__Comentar__C74515DA092105FE", x => x.idComentario);
+                    table.PrimaryKey("PK_Comentarios", x => x.idComentario);
+                    table.CheckConstraint("CK_Comentario_Calificacion", "calificacion >= 1 AND calificacion <= 5");
                     table.ForeignKey(
-                        name: "FK__Comentari__googl__5BE2A6F2",
-                        column: x => x.googlePlaceId,
+                        name: "FK_Comentarios_Lugares",
+                        column: x => x.idLugar,
                         principalTable: "Lugares",
-                        principalColumn: "googlePlaceId");
+                        principalColumn: "idLugar",
+                        onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
-                        name: "FK__Comentari__idUsu__5AEE82B9",
+                        name: "FK_Comentarios_Usuarios",
                         column: x => x.idUsuario,
                         principalTable: "Usuarios",
-                        principalColumn: "idUsuario");
-                });
-
-            migrationBuilder.CreateTable(
-                name: "LugaresAcciones",
-                columns: table => new
-                {
-                    idAccion = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    idUsuario = table.Column<int>(type: "int", nullable: true),
-                    googlePlaceId = table.Column<string>(type: "varchar(255)", unicode: false, maxLength: 255, nullable: true),
-                    tipoAccion = table.Column<string>(type: "varchar(20)", unicode: false, maxLength: 20, nullable: false),
-                    fechaAccion = table.Column<DateTime>(type: "datetime", nullable: true, defaultValueSql: "(getdate())")
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK__LugaresA__E0B207A4DF513223", x => x.idAccion);
-                    table.ForeignKey(
-                        name: "FK__LugaresAc__googl__5629CD9C",
-                        column: x => x.googlePlaceId,
-                        principalTable: "Lugares",
-                        principalColumn: "googlePlaceId");
-                    table.ForeignKey(
-                        name: "FK__LugaresAc__idUsu__5535A963",
-                        column: x => x.idUsuario,
-                        principalTable: "Usuarios",
-                        principalColumn: "idUsuario");
+                        principalColumn: "idUsuario",
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateIndex(
-                name: "IX_Comentarios_googlePlaceId",
+                name: "IX_AccionLugar_idLugar",
+                table: "AccionLugar",
+                column: "idLugar");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_AccionLugar_idUsuario",
+                table: "AccionLugar",
+                column: "idUsuario");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Comentarios_idLugar",
                 table: "Comentarios",
-                column: "googlePlaceId");
+                column: "idLugar");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Comentarios_idUsuario",
@@ -131,22 +148,19 @@ namespace Services.Migrations
                 column: "idUsuario");
 
             migrationBuilder.CreateIndex(
+                name: "IX_Lugares_googlePlaceId",
+                table: "Lugares",
+                column: "googlePlaceId",
+                unique: true,
+                filter: "[googlePlaceId] IS NOT NULL");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Lugares_idMunicipio",
                 table: "Lugares",
                 column: "idMunicipio");
 
             migrationBuilder.CreateIndex(
-                name: "IX_LugaresAcciones_googlePlaceId",
-                table: "LugaresAcciones",
-                column: "googlePlaceId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_LugaresAcciones_idUsuario",
-                table: "LugaresAcciones",
-                column: "idUsuario");
-
-            migrationBuilder.CreateIndex(
-                name: "UQ__Usuarios__2A586E0B854D0267",
+                name: "UQ_Usuarios_Correo",
                 table: "Usuarios",
                 column: "correo",
                 unique: true);
@@ -156,10 +170,10 @@ namespace Services.Migrations
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropTable(
-                name: "Comentarios");
+                name: "AccionLugar");
 
             migrationBuilder.DropTable(
-                name: "LugaresAcciones");
+                name: "Comentarios");
 
             migrationBuilder.DropTable(
                 name: "Lugares");
