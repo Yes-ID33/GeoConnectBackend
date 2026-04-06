@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Models;
 using Services.Interface;
+using BCrypt;
 
 namespace Services.Implements
 {
@@ -40,7 +41,7 @@ namespace Services.Implements
             {
                 Nombre = dto.Nombre,
                 Correo = dto.Correo,
-                Contrasena = dto.Contrasena, // Nota: En un entorno real, aquí deberías hashear la contraseña
+                Contrasena = BCrypt.Net.BCrypt.HashPassword(dto.Contrasena), 
                 Verificado = false,
                 FechaCreacion = DateTime.Now
             };
@@ -74,7 +75,7 @@ namespace Services.Implements
 
             usuarioBd.Nombre = dto.Nombre;
             usuarioBd.Correo = dto.Correo;
-            usuarioBd.Contrasena = dto.Contrasena;
+            usuarioBd.Contrasena = BCrypt.Net.BCrypt.HashPassword(dto.Contrasena);
 
             await _context.SaveChangesAsync();
             return (true, "Perfil actualizado correctamente.");

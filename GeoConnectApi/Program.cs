@@ -4,6 +4,9 @@ using Services;
 using Services.Implements;
 using Services.Interface;
 using System.Reflection;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
 
 // Nota: En .NET moderno (6, 8, 9) ya no se usa el "public class Program { public static void Main... }"
 // Se usan instrucciones de nivel superior (Top-level statements) como en tu versión original.
@@ -19,12 +22,32 @@ builder.Services.AddDbContext<GeoConnectContext>(options =>
 // --- 2. INYECCIÓN DE DEPENDENCIAS (Versión del profesor)
 // Aquí le decimos a la API: "Cuando un controlador te pida un IUsuarioService, entrégale un UsuarioService".
 builder.Services.AddTransient<IAccionLugarService, AccionLugarService>();
+builder.Services.AddTransient<IAuthService, AuthService>();
 builder.Services.AddTransient<IComentarioService, ComentarioService>();
+builder.Services.AddTransient<IEmailService, EmailService>();
 builder.Services.AddTransient<ILugarService, LugarService>();
 builder.Services.AddTransient<IMunicipioService, MunicipioService>();
 builder.Services.AddTransient<IUsuarioService, UsuarioService>();
 
 builder.Services.AddControllers();
+
+//2.5. Config de auth para el JWT
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime= true,
+            ValidateIssuerSigningKey = true,
+            ValidIssuer = builder.Configuration["JwtSettings:Issuer"],
+            ValidAudience = builder.Configuration["JwtSetting:Audience"],
+            IssuerSigningKey = new SymmetricSecurityKey(
+                Encoding.UTF8.GetBytes(builder.Configuration["JwtSettings:SecretKey"]!))
+        };
+    });
+
 
 // --- 3. CONFIGURACIÓN DE SWAGGER ---
 builder.Services.AddEndpointsApiExplorer();
@@ -37,6 +60,30 @@ builder.Services.AddSwaggerGen(options =>
     var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFilename);
 
     options.IncludeXmlComments(xmlPath);
+
+    options.AddSecurityDefinition("Bearer", new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+    {
+        Description = "Autorización JWT. Escribe 'Bearer' [espacio] y luego tu token. Ejemplo: 'Bearer eyJhbGci...'",
+        Name = "Authorization",
+        In = Microsoft.OpenApi.Models.ParameterLocation.Header,
+        Type = Microsoft.OpenApi.Models.SecuritySchemeType.ApiKey,
+        Scheme = "Bearer"
+    });
+
+    options.AddSecurityRequirement(new Microsoft.OpenApi.Models.OpenApiSecurityRequirement
+    {
+        {
+            new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+            {
+                Reference = new Microsoft.OpenApi.Models.OpenApiReference
+                {
+                    Type = Microsoft.OpenApi.Models.ReferenceType.SecurityScheme,
+                    Id = "Bearer"
+                }
+            },
+            Array.Empty<string>()
+        }
+    });
 });
 
 var app = builder.Build();
@@ -62,6 +109,8 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+app.UseAuthentication();
 
 app.UseAuthorization();
 

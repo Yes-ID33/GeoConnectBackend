@@ -30,7 +30,8 @@ namespace Services.Implements
                     GooglePlaceId = l.GooglePlaceId,
                     NombreLugar = l.NombreLugar,
                     DistanciaMetros = l.Coordenadas!.Distance(miUbicacion),
-                    TotalComentarios = _context.Comentarios.Count(c => c.IdLugar == l.IdLugar)
+                    TotalComentarios = _context.Comentarios.Count(c => c.IdLugar == l.IdLugar),
+                    FotoUrl = l.FotoUrl
                 }).ToListAsync();
 
             return lugares;
@@ -49,7 +50,8 @@ namespace Services.Implements
                 // Usamos un casteo a double? para que no explote si un lugar tiene 0 comentarios.
                 CalificacionPromedio = _context.Comentarios
                                         .Where(c => c.IdLugar == l.IdLugar)
-                                        .Average(c => (double?)c.Calificacion) ?? 0.0
+                                        .Average(c => (double?)c.Calificacion) ?? 0.0,
+                FotoUrl = l.FotoUrl
             });
 
             // Opcional: Podrías ordenar por Calificación en lugar de Cantidad de Comentarios
@@ -61,6 +63,21 @@ namespace Services.Implements
             var lugares = await query.ToListAsync();
 
             return lugares;
+        }
+
+        public async Task<IEnumerable<LugarMapaResponseDto>> GetTodosLosLugares()
+        {
+            return await _context.Lugares
+                .Where(l => l.Coordenadas!= null)
+                .Select(l => new LugarMapaResponseDto
+                {
+                    IdLugar = l.IdLugar,
+                    NombreLugar = l.NombreLugar,
+                    // lo que vamos a hacer se conoce como 'cast'
+                    Latitud = ((Point)l.Coordenadas!).Y, //con esto ya NetTopology entiende que es un tipo de dato Geometry.Punto
+                    Longitud = ((Point)l.Coordenadas!).X, // y no un Geometry.Poligono, es decir, sabe que es un dato espacial (SRID,lat, long)
+                    FotoUrl = l.FotoUrl
+                }).ToListAsync();
         }
     }
 }

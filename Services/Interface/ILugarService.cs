@@ -4,6 +4,7 @@
     {
         Task<IEnumerable<LugarCercanoResponseDto>> GetLugaresCercanos(double lat, double lon, double radioEnMetros);
         Task<IEnumerable<LugarPopularResponseDto>> GetLugaresPopulares(bool ascendente = false);
+        Task<IEnumerable<LugarMapaResponseDto>>GetTodosLosLugares();
     }
 
     public class LugarCercanoResponseDto
@@ -13,6 +14,7 @@
         public string NombreLugar { get; set; } = string.Empty;
         public double DistanciaMetros { get; set; }
         public int TotalComentarios { get; set; }
+        public string? FotoUrl { get; set; }
     }
 
     public class LugarPopularResponseDto
@@ -24,5 +26,15 @@
 
         // ¡AGREGADO! Promedio de estrellas
         public double CalificacionPromedio { get; set; }
+        public string? FotoUrl { get; set; }
+    }
+
+    public class LugarMapaResponseDto
+    {
+        public int IdLugar { get; set; }
+        public string NombreLugar { get; set; } = string.Empty;
+        public double Latitud { get; set; }
+        public double Longitud { get; set; }
+        public string? FotoUrl { get; set; }
     }
 }
