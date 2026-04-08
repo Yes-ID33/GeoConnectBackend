@@ -42,30 +42,32 @@ namespace Services.Implements
             return (true,"Inicio de sesión exitoso", token);
         }
 
-        public async Task<(bool Exito, string Mensaje)> VerificarCuentaAsync(VerificarCuentaDto dto)
+        public async Task<(bool Exito, string Mensaje, string? Token)> VerificarCuentaAsync(VerificarCuentaDto dto)
         {
-            var usuarioBd = await _context.Usuarios.FirstOrDefaultAsync(u => u.Correo == dto.Correo);
+            var usuarioPorVerificar = await _context.Usuarios.FirstOrDefaultAsync(u => u.Correo == dto.Correo);
 
-            if (usuarioBd == null)
-                return (false, "Usuario no encontrado.");
+            if (usuarioPorVerificar == null)
+                return (false, "Usuario no encontrado.", null);
 
-            if (usuarioBd.Verificado == true)
-                return (false, "La cuenta ya se encuentra verificada.");
+            if (usuarioPorVerificar.Verificado == true)
+                return (false, "La cuenta ya se encuentra verificada.", null);
 
-            if (usuarioBd.TokenVerificacion != dto.Token)
-                return (false, "El código de verificación es incorrecto.");
+            if (usuarioPorVerificar.TokenVerificacion != dto.Token)
+                return (false, "El código de verificación es incorrecto.", null);
 
-            if (usuarioBd.TokenExpira < DateTime.Now)
-                return (false, "El código de verificación ha expirado. Por favor solicita uno nuevo.");
+            if (usuarioPorVerificar.TokenExpira < DateTime.Now)
+                return (false, "El código de verificación ha expirado. Por favor solicita uno nuevo.", null);
 
             // Si pasa todo, activamos la cuenta y limpiamos el token de la DB
-            usuarioBd.Verificado = true;
-            usuarioBd.TokenVerificacion = null;
-            usuarioBd.TokenExpira = null;
+            usuarioPorVerificar.Verificado = true;
+            usuarioPorVerificar.TokenVerificacion = null;
+            usuarioPorVerificar.TokenExpira = null;
+
+            string token = generarJwtToken(usuarioPorVerificar);
 
             await _context.SaveChangesAsync();
 
-            return (true, "Cuenta verificada correctamente. Ya puedes iniciar sesión.");
+            return (true, "Cuenta verificada correctamente. Ya puedes iniciar sesión.", token);
         }
 
         private string generarJwtToken(Usuario usuario)

@@ -7,7 +7,7 @@ using NetTopologySuite.Geometries;
 namespace Services.Migrations
 {
     /// <inheritdoc />
-    public partial class DatabaseFinalVersion : Migration
+    public partial class VersionFinal : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)

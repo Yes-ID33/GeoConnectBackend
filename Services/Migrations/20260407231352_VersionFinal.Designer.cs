@@ -13,8 +13,8 @@ using Services;
 namespace Services.Migrations
 {
     [DbContext(typeof(GeoConnectContext))]
-    [Migration("20260324234701_DatabaseFinalVersion")]
-    partial class DatabaseFinalVersion
+    [Migration("20260407231352_VersionFinal")]
+    partial class VersionFinal
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)

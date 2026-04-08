@@ -6,7 +6,7 @@ var builder = Host.CreateApplicationBuilder(args);
 
 // Configuración de Base de Datos
 builder.Services.AddDbContext<GeoConnectContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"),
+    options.UseSqlServer(builder.Configuration.GetConnectionString("connectionDB"),
     x => x.UseNetTopologySuite()));
 
 // Inyección del Factory para HTTP

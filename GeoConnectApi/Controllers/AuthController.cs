@@ -51,7 +51,11 @@ namespace GeoConnectApi.Controllers
             if (!resultado.Exito)
                 return BadRequest(new { Mensaje = resultado.Mensaje });
 
-            return Ok(new { Mensaje = resultado.Mensaje });
+            return Ok(new 
+            { 
+                Mensaje = resultado.Mensaje,
+                Token = resultado.Token
+            });
         }
     }
 }

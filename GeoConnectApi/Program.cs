@@ -21,13 +21,13 @@ builder.Services.AddDbContext<GeoConnectContext>(options =>
 
 // --- 2. INYECCIÓN DE DEPENDENCIAS (Versión del profesor)
 // Aquí le decimos a la API: "Cuando un controlador te pida un IUsuarioService, entrégale un UsuarioService".
-builder.Services.AddTransient<IAccionLugarService, AccionLugarService>();
-builder.Services.AddTransient<IAuthService, AuthService>();
-builder.Services.AddTransient<IComentarioService, ComentarioService>();
-builder.Services.AddTransient<IEmailService, EmailService>();
-builder.Services.AddTransient<ILugarService, LugarService>();
-builder.Services.AddTransient<IMunicipioService, MunicipioService>();
-builder.Services.AddTransient<IUsuarioService, UsuarioService>();
+builder.Services.AddScoped<IAccionLugarService, AccionLugarService>();
+builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IComentarioService, ComentarioService>();
+builder.Services.AddScoped<IEmailService, EmailService>();
+builder.Services.AddScoped<ILugarService, LugarService>();
+builder.Services.AddScoped<IMunicipioService, MunicipioService>();
+builder.Services.AddScoped<IUsuarioService, UsuarioService>();
 
 builder.Services.AddControllers();
 
@@ -42,7 +42,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidateLifetime= true,
             ValidateIssuerSigningKey = true,
             ValidIssuer = builder.Configuration["JwtSettings:Issuer"],
-            ValidAudience = builder.Configuration["JwtSetting:Audience"],
+            ValidAudience = builder.Configuration["JwtSettings:Audience"],
             IssuerSigningKey = new SymmetricSecurityKey(
                 Encoding.UTF8.GetBytes(builder.Configuration["JwtSettings:SecretKey"]!))
         };

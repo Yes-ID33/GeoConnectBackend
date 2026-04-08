@@ -31,6 +31,8 @@ namespace GeoConnectApi.Controllers
         /// Método para crear usuarios nuevos, ideal para Register.
         /// </summary>
         [HttpPost("CreateUser")]
+        [ProducesResponseType(StatusCodes.Status201Created)] // Le avisa a Swagger del 201
+        [ProducesResponseType(StatusCodes.Status400BadRequest)] // Le avisa a Swagger del 400
         public async Task<IActionResult> CrearUsuario([FromBody] CrearUsuarioDto dto)
         {
             var resultado = await _usuarioService.CrearUsuario(dto);

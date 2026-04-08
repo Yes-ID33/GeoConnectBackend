@@ -1,17 +1,19 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Models;
 using Services.Interface;
-using BCrypt;
+using BCrypt.Net;
 
 namespace Services.Implements
 {
     public class UsuarioService : IUsuarioService
     {
         private readonly GeoConnectContext _context;
+        private readonly IEmailService _emailService;
 
-        public UsuarioService(GeoConnectContext context)
+        public UsuarioService(GeoConnectContext context, IEmailService emailService)
         {
             _context = context;
+            _emailService = emailService;
         }
 
         public async Task<IEnumerable<UsuarioResponseDto>> ListarUsuarios()
@@ -37,19 +39,38 @@ namespace Services.Implements
             if (existe)
                 return (false, "El correo ya está registrado.", null);
 
+            // 1. Generamos un PIN numérico de 6 dígitos aleatorio
+            string pin = new Random().Next(100000, 999999).ToString();
+
+            // 2. Preparamos la entidad con los tokens
             var newUser = new Usuario
             {
                 Nombre = dto.Nombre,
                 Correo = dto.Correo,
-                Contrasena = BCrypt.Net.BCrypt.HashPassword(dto.Contrasena), 
+                Contrasena = BCrypt.Net.BCrypt.HashPassword(dto.Contrasena),
                 Verificado = false,
+                TokenVerificacion = pin, // <-- Asignamos el PIN
+                TokenExpira = DateTime.Now.AddMinutes(30), // <-- Expira en 30 mins
                 FechaCreacion = DateTime.Now
             };
 
+            // 3. Guardamos en base de datos
             _context.Usuarios.Add(newUser);
             await _context.SaveChangesAsync();
 
-            // Mapeamos a la respuesta segura
+            // 4. Enviamos el correo (Lo envolvemos en try-catch por si falla el internet o la clave)
+            try
+            {
+                await _emailService.EnviarCorreoActivacionAsync(newUser.Correo, newUser.Nombre, pin);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error enviando correo SMTP: {ex.Message}");
+                // Puedes decidir si retornar falso aquí, pero usualmente se deja pasar 
+                // y se permite al usuario pedir un reenvío de código después.
+            }
+
+            // 5. Mapeamos a la respuesta segura
             var respuesta = new UsuarioResponseDto
             {
                 IdUsuario = newUser.IdUsuario,
@@ -59,7 +80,7 @@ namespace Services.Implements
                 FechaCreacion = newUser.FechaCreacion ?? DateTime.Now
             };
 
-            return (true, "Usuario creado exitosamente.", respuesta);
+            return (true, "Usuario creado exitosamente. Por favor revisa tu correo para activar la cuenta.", respuesta);
         }
 
         public async Task<(bool Exito, string Mensaje)> ActualizarUsuario(int id, ActualizarUsuarioDto dto)
