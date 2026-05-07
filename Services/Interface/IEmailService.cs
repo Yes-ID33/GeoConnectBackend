@@ -3,5 +3,7 @@
     public interface IEmailService
     {
         Task EnviarCorreoActivacionAsync(string correoDestino, string nombre, string token);
+
+        Task EnviarReporteConsumoCoordsAsync(string correoDev, List<string> lugaresFallidos);
     }
 }

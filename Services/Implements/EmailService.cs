@@ -53,5 +53,52 @@ namespace Services.Implements
 
             await smtp.SendMailAsync(message);
         }
+
+        public async Task EnviarReporteConsumoCoordsAsync(string correoDesarrollador, List<string> lugaresFallidos)
+        {
+            var emailSettings = _config.GetSection("EmailSettings");
+            string senderEmail = emailSettings["SenderEmail"]!;
+            string senderPassword = emailSettings["Password"]!;
+            string senderName = emailSettings["SenderName"]!;
+            string smtpServer = emailSettings["SmtpServer"]!;
+            int port = int.Parse(emailSettings["Port"]!);
+
+            var fromAddress = new MailAddress(senderEmail, senderName);
+            var toAddress = new MailAddress(correoDesarrollador, "Equipo de Desarrollo");
+
+            var smtp = new SmtpClient
+            {
+                Host = smtpServer,
+                Port = port,
+                EnableSsl = true,
+                DeliveryMethod = SmtpDeliveryMethod.Network,
+                UseDefaultCredentials = false,
+                Credentials = new NetworkCredential(fromAddress.Address, senderPassword)
+            };
+
+            // Construimos la lista HTML con los lugares
+            string listaHtml = "";
+            foreach (var lugar in lugaresFallidos)
+            {
+                listaHtml += $"<li style='color: #d9534f; margin-bottom: 5px;'><strong>{lugar}</strong></li>";
+            }
+
+            using var message = new MailMessage(fromAddress, toAddress)
+            {
+                Subject = "⚠️ Reporte del Worker: Lugares no encontrados en Nominatim",
+                Body = $@"
+            <div style='font-family: Arial, sans-serif; padding: 20px; background-color: #f9f9f9; border-radius: 10px; border-left: 5px solid #d9534f;'>
+                <h2 style='color: #333;'>¡Atención Devs! 🛠️</h2>
+                <p style='color: #555;'>El Worker de Geocodificación ha terminado su ciclo, pero no pudo encontrar las coordenadas de los siguientes lugares. Revisen el <strong>DataSeeder</strong> para afinar los nombres y direcciones:</p>
+                <ul style='background-color: #fff; padding: 15px 15px 15px 40px; border-radius: 5px; border: 1px solid #ddd;'>
+                    {listaHtml}
+                </ul>
+                <p style='color: #777; font-size: 12px; margin-top: 20px;'>Este es un mensaje automático de tu GeoConnectBackend.</p>
+            </div>",
+                IsBodyHtml = true
+            };
+
+            await smtp.SendMailAsync(message);
+        }
     }
 }
