@@ -53,10 +53,14 @@ namespace AutofillGooglePlacesID
 
                     if (lugaresPendientes.Any())
                     {
-                        _logger.LogInformation("Se encontraron {Count} lugares pendientes por geocodificar.", lugaresPendientes.Count);
+                        _logger.LogInformation("Se encontraron {Count} lugares pendientes por geocodificar/fotografiar.", lugaresPendientes.Count);
 
                         var httpClient = _httpClientFactory.CreateClient();
                         var lugaresFallidos = new List<string>();
+
+                        // 1. INICIAMOS EL CONTADOR DE UNSPLASH
+                        int contadorUnsplash = 0;
+                        bool limiteUnsplashAlcanzado = false;
 
                         foreach (var lugar in lugaresPendientes)
                         {
@@ -65,20 +69,15 @@ namespace AutofillGooglePlacesID
 
                             try
                             {
-                                //primera parte: coordenadas
+                                // --- PRIMERA PARTE: COORDENADAS (Nominatim) ---
                                 if (lugar.Coordenadas == null)
                                 {
-                                    // 2. ARMAR LA PETICIÓN A NOMINATIM (/search)
-                                    //Juntamos el nombre del lugar, con el municipio, departamento y país
+                                    // Juntamos el nombre del lugar, con el municipio, departamento y país
                                     string terminoBusqueda = $"{lugar.NombreLugar}, {lugar.Municipio?.NombreMunicipio}, Antioquia, Colombia";
-                                    // Escapamos el nombre para que sea seguro en una URL
                                     string query = Uri.EscapeDataString(terminoBusqueda);
-                                    // limit=1 para traer solo el mejor resultado y format=jsonv2 por estándar
                                     string nominatimUrl = $"https://nominatim.openstreetmap.org/search?q={query}&format=jsonv2&limit=1";
 
                                     var request = new HttpRequestMessage(HttpMethod.Get, nominatimUrl);
-
-                                    // REGLA DE ORO: Nominatim exige un User-Agent.
                                     request.Headers.Add("User-Agent", "GeoConnectApp/1.0 (yesid.maldonado820@pascualbravo.edu.co)");
 
                                     HttpResponseMessage response = await httpClient.SendAsync(request, stoppingToken);
@@ -89,65 +88,70 @@ namespace AutofillGooglePlacesID
                                         using JsonDocument doc = JsonDocument.Parse(jsonResponse);
                                         JsonElement root = doc.RootElement;
 
-                                        // Nominatim devuelve un Array de resultados
                                         if (root.ValueKind == JsonValueKind.Array && root.GetArrayLength() > 0)
                                         {
                                             JsonElement firstResult = root[0];
-
-                                            // En /search, lat y lon vienen en la raíz como strings
                                             string? latString = firstResult.GetProperty("lat").GetString();
                                             string? lonString = firstResult.GetProperty("lon").GetString();
 
-                                            // Usamos CultureInfo.InvariantCulture para evitar problemas si el servidor usa comas en vez de puntos
                                             if (double.TryParse(latString, NumberStyles.Float, CultureInfo.InvariantCulture, out double lat) &&
                                                 double.TryParse(lonString, NumberStyles.Float, CultureInfo.InvariantCulture, out double lon))
                                             {
-                                                // NetTopologySuite usa (Longitud, Latitud) => (X, Y)
                                                 lugar.Coordenadas = new Point(lon, lat) { SRID = 4326 };
-
-                                                // Opcional: Podrías guardar el OSM_ID en tu campo GooglePlaceId (cambiándole el nombre en el futuro)
-                                                // lugar.GooglePlaceId = firstResult.GetProperty("osm_id").GetInt64().ToString();
-
-                                                _logger.LogInformation("Éxito: {Lugar} -> {{Lat: {Lat}, Lon: {Lon}}}", lugar.NombreLugar, lat, lon);
+                                                _logger.LogInformation("Éxito Coordenadas: {Lugar} -> {{Lat: {Lat}, Lon: {Lon}}}", lugar.NombreLugar, lat, lon);
                                             }
                                         }
                                         else
                                         {
-                                            _logger.LogWarning("No se encontraron resultados para: {Lugar}", lugar.NombreLugar);
-                                            lugaresFallidos.Add($"{lugar.NombreLugar} (Dirección: {lugar.Direccion ?? "N/A"}) en {lugar.Municipio?.NombreMunicipio}");
+                                            _logger.LogWarning("Nominatim no encontró resultados para: {Lugar}", lugar.NombreLugar);
+                                            lugaresFallidos.Add($"{lugar.NombreLugar} (Sin coordenadas) en {lugar.Municipio?.NombreMunicipio}");
                                         }
                                     }
                                     else
                                     {
-                                        _logger.LogWarning("Error consultando {Lugar}: {StatusCode}", lugar.NombreLugar, response.StatusCode);
-                                        lugaresFallidos.Add($"{lugar.NombreLugar} - Error de servidor: {response.StatusCode}");
+                                        _logger.LogWarning("Error consultando Nominatim para {Lugar}: {StatusCode}", lugar.NombreLugar, response.StatusCode);
+                                        lugaresFallidos.Add($"{lugar.NombreLugar} - Error API Nominatim: {response.StatusCode}");
                                     }
 
-                                    // 3. REGLA DE ORO DE NOMINATIM: Retraso estricto de 1.1 segundos
+                                    // Retraso estricto de Nominatim (1.1s)
                                     await Task.Delay(1100, stoppingToken);
                                 }
-                                // segunda parte: url de las fotos con unsplash
+
+                                // --- SEGUNDA PARTE: FOTOS (Unsplash) ---
                                 if (string.IsNullOrEmpty(lugar.FotoUrl))
                                 {
-                                    string? urlEncontrada = await BuscarFotoAsync(httpClient, lugar.NombreLugar, lugar.Municipio?.NombreMunicipio, stoppingToken);
-
-                                    if (!string.IsNullOrEmpty(urlEncontrada))
+                                    // 2. VERIFICAMOS EL LÍMITE ANTES DE CONSULTAR
+                                    if (contadorUnsplash < 45)
                                     {
-                                        lugar.FotoUrl = urlEncontrada;
-                                        _logger.LogInformation("Foto encontrada para {lugar}", lugar.NombreLugar);
+                                        contadorUnsplash++; // Sumamos 1 al contador
+                                        string? urlEncontrada = await BuscarFotoAsync(httpClient, lugar.NombreLugar, lugar.Municipio?.NombreMunicipio, stoppingToken);
+
+                                        if (!string.IsNullOrEmpty(urlEncontrada))
+                                        {
+                                            lugar.FotoUrl = urlEncontrada;
+                                            _logger.LogInformation("Foto encontrada para {Lugar} (Petición Unsplash #{Contador})", lugar.NombreLugar, contadorUnsplash);
+                                        }
+                                        else
+                                        {
+                                            _logger.LogWarning("Unsplash no encontró foto para: {Lugar}", lugar.NombreLugar);
+                                        }
                                     }
                                     else
                                     {
-                                        _logger.LogWarning("Unsplash no encontró foto para: {lugar}", lugar.NombreLugar);
+                                        // 3. SI LLEGAMOS A 45, DEJAMOS DE BUSCAR FOTOS EN ESTE CICLO
+                                        if (!limiteUnsplashAlcanzado)
+                                        {
+                                            _logger.LogWarning("¡Límite de seguridad de Unsplash alcanzado (45)! Las fotos restantes se buscarán en el próximo ciclo (dentro de 2 horas).");
+                                            limiteUnsplashAlcanzado = true; // Para no repetir este mensaje en cada iteración
+                                        }
                                     }
                                 }
                             }
-                            catch(Exception exLugar)
+                            catch (Exception exLugar)
                             {
-                                // Si este lugar falla catastróficamente, lo registramos pero el foreach continuará con el siguiente
                                 _logger.LogError("Error aislado procesando {Lugar}: {Error}", lugar.NombreLugar, exLugar.Message);
                                 lugaresFallidos.Add($"{lugar.NombreLugar} - Error interno: {exLugar.Message}");
-                            }                                                                                
+                            }
                         }
 
                         // 4. GUARDAR CAMBIOS EN LA BASE DE DATOS
