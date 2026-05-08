@@ -144,7 +144,7 @@
         }
       }
     },
-    "/api/Comentario/por-lugar/{googlePlaceId}": {
+    "/api/Comentario/por-lugar/{NominatimId}": {
       "get": {
         "tags": [
           "Comentario"
@@ -161,7 +161,7 @@
             }
           },
           {
-            "name": "googlePlaceId",
+            "name": "nominatimId",
             "in": "path",
             "required": true,
             "schema": {
