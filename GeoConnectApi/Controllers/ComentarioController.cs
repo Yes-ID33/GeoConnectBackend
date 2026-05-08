@@ -22,7 +22,7 @@ namespace GeoConnectApi.Controllers
         /// </summary>
         /// <param name="IdLugar"></param> ID interno de cada lugar en nuestra DB
         /// <returns></returns>
-        [HttpGet("por-lugar/{googlePlaceId}")]
+        [HttpGet("por-lugar/{idLugar}")]
         public async Task<IActionResult> GetComentariosPorLugar(int IdLugar)
         {
             var comentarios = await _comentarioService.GetComentariosPorLugar(IdLugar);

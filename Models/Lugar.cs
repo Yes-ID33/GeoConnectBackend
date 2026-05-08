@@ -10,7 +10,7 @@ namespace Models
     {
         public int IdLugar { get; set; }
 
-        public string? GooglePlaceId { get; set; }
+        public string? NominatimId { get; set; }
 
         public int? IdMunicipio { get; set; }
 

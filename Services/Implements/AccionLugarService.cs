@@ -37,7 +37,7 @@ namespace Services.Implements
                 FechaAccion = a.FechaAccion,
                 NombreLugar = a.Lugar!.NombreLugar,
                 IdLugar = a.IdLugar, // Usamos la nueva PK de tu BD
-                GooglePlaceId = a.Lugar.GooglePlaceId
+                NominatimId = a.Lugar.NominatimId
             }).ToListAsync();
 
             return resultados;

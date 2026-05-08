@@ -66,14 +66,14 @@ public partial class GeoConnectContext : DbContext
             entity.ToTable("Lugares");
             entity.HasKey(e => e.IdLugar); // NUEVA LLAVE PRIMARIA
 
-            // Hacemos que GooglePlaceId sea único, pero permitiendo nulos
-            entity.HasIndex(e => e.GooglePlaceId).IsUnique();
+            // Hacemos que NominatimId sea único, pero permitiendo nulos
+            entity.HasIndex(e => e.NominatimId).IsUnique();
 
             entity.Property(e => e.IdLugar).HasColumnName("idLugar");
-            entity.Property(e => e.GooglePlaceId)
+            entity.Property(e => e.NominatimId)
                 .HasMaxLength(255)
                 .IsUnicode(false)
-                .HasColumnName("googlePlaceId"); // Ya no es required
+                .HasColumnName("NominatimId"); // Ya no es required
 
             entity.Property(e => e.IdMunicipio).HasColumnName("idMunicipio");
             entity.Property(e => e.NombreLugar).HasMaxLength(255).HasColumnName("nombreLugar").IsRequired();

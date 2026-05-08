@@ -29,6 +29,6 @@
         public int IdLugar { get; set; }
 
         // Dejamos el de Google opcional por si el Frontend necesita pintar un mapa
-        public string? GooglePlaceId { get; set; }
+        public string? NominatimId { get; set; }
     }
 }

@@ -9,27 +9,29 @@ namespace Services.Implements
     public class LugarService : ILugarService
     {
         private readonly GeoConnectContext _context;
+        private readonly GeometryFactory _geometryFactory;
 
         public LugarService(GeoConnectContext context)
         {
             _context = context;
+            _geometryFactory = NtsGeometryServices.Instance.CreateGeometryFactory(srid: 4326);
         }
 
         public async Task<IEnumerable<LugarCercanoResponseDto>> GetLugaresCercanos(double lat, double lon, double radioEnMetros)
         {
-            var geometryFactory = NtsGeometryServices.Instance.CreateGeometryFactory(srid: 4326);
-            var miUbicacion = geometryFactory.CreatePoint(new Coordinate(lon, lat));
+            var miUbicacion = _geometryFactory.CreatePoint(new Coordinate(lon, lat));
 
             var lugares = await _context.Lugares
                 // ¡CORRECCIÓN! Primero verificamos que las coordenadas NO sean nulas
-                .Where(l => l.Coordenadas != null && l.Coordenadas.Distance(miUbicacion) <= radioEnMetros)
+                .Where(l => l.Coordenadas != null). 
+                Where(l => l.Coordenadas!.Distance(miUbicacion) <= radioEnMetros)
                 .OrderBy(l => l.Coordenadas!.Distance(miUbicacion))
                 .Select(l => new LugarCercanoResponseDto
                 {
                     IdLugar = l.IdLugar,
-                    GooglePlaceId = l.GooglePlaceId,
+                    NominatimId = l.NominatimId,
                     NombreLugar = l.NombreLugar,
-                    DistanciaMetros = l.Coordenadas!.Distance(miUbicacion),
+                    DistanciaMetros = Math.Round(l.Coordenadas!.Distance(miUbicacion), 2),
                     TotalComentarios = _context.Comentarios.Count(c => c.IdLugar == l.IdLugar),
                     FotoUrl = l.FotoUrl
                 }).ToListAsync();
@@ -42,7 +44,7 @@ namespace Services.Implements
             var query = _context.Lugares.Select(l => new LugarPopularResponseDto
             {
                 IdLugar = l.IdLugar,
-                GooglePlaceId = l.GooglePlaceId,
+                NominatimId = l.NominatimId,
                 NombreLugar = l.NombreLugar,
                 CantidadComentarios = _context.Comentarios.Count(c => c.IdLugar == l.IdLugar),
 

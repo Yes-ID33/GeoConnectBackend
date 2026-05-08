@@ -4,13 +4,13 @@
     {
         Task<IEnumerable<LugarCercanoResponseDto>> GetLugaresCercanos(double lat, double lon, double radioEnMetros);
         Task<IEnumerable<LugarPopularResponseDto>> GetLugaresPopulares(bool ascendente = false);
-        Task<IEnumerable<LugarMapaResponseDto>>GetTodosLosLugares();
+        Task<IEnumerable<LugarMapaResponseDto>> GetTodosLosLugares();
     }
 
     public class LugarCercanoResponseDto
     {
         public int IdLugar { get; set; }
-        public string? GooglePlaceId { get; set; }
+        public string? NominatimId { get; set; }
         public string NombreLugar { get; set; } = string.Empty;
         public double DistanciaMetros { get; set; }
         public int TotalComentarios { get; set; }
@@ -20,7 +20,7 @@
     public class LugarPopularResponseDto
     {
         public int IdLugar { get; set; }
-        public string? GooglePlaceId { get; set; }
+        public string? NominatimId { get; set; }
         public string NombreLugar { get; set; } = string.Empty;
         public int CantidadComentarios { get; set; }
 

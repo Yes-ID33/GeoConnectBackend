@@ -2,7 +2,7 @@
 {
     public interface IComentarioService
     {
-        // 1. Cambiamos string googlePlaceId por int idLugar
+        // 1. Cambiamos string nominatimId por int idLugar
         Task<IEnumerable<ComentarioLugarResponseDto>> GetComentariosPorLugar(int idLugar);
 
         Task<IEnumerable<ComentarioUsuarioResponseDto>> GetComentariosPorUsuario(int idUsuario);
